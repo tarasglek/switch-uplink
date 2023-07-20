@@ -13,15 +13,17 @@ def get_default_gateways():
     gateways = [(route['dev'], route['gateway']) for route in default_routes]
 
     for i, (interface, gateway) in enumerate(gateways):
-        result = subprocess.run(['ip', '-j', 'addr', 'show', interface], capture_output=True, text=True)
+        result = subprocess.run(['ip', '-j', '--brief', 'addr', 'show', interface], capture_output=True, text=True)
         interface_info = json.loads(result.stdout)
         ip = None
         for info in interface_info:
-            if 'inet' in info:
-                ip = info['inet'][0]['local']
+            for addr_info in info['addr_info']:
+                if 'local' in addr_info:
+                    ip = addr_info['local']
+                    break
+            if ip:
                 break
         gateways[i] = (interface, gateway, ip)
-
     return gateways
 
 def modify_route(action, gateway, interface, metric=None):
@@ -45,9 +47,9 @@ def switch_route():
         modify_route('del', gateway, interface)
 
     # Add the new default routes with reversed priorities
-    logging.info(f"Adding default route via {gateways[1][1]} on {gateways[1][0]} with IP {gateways[1][2]} and metric 100")
+    logging.info(f"Adding default route via {gateways[1][1]} on {gateways[1][0]} with IP {gateways[1][2]} and metric 100 (primary)")
     modify_route('add', gateways[1][1], gateways[1][0], 100)
-    logging.info(f"Adding default route via {gateways[0][1]} on {gateways[0][0]} with IP {gateways[0][2]} and metric 101")
+    logging.info(f"Adding default route via {gateways[0][1]} on {gateways[0][0]} with IP {gateways[0][2]} and metric 101 (backup)")
     modify_route('add', gateways[0][1], gateways[0][0], 101)
 
 if __name__ == "__main__":
