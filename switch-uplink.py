@@ -9,7 +9,20 @@ def get_default_gateways():
     result = subprocess.run(['ip', '-j', 'route'], capture_output=True, text=True)
     routes = json.loads(result.stdout)
     default_routes = [route for route in routes if 'default' in route['dst']]
-    return [(route['dev'], route['gateway']) for route in default_routes]
+
+    gateways = [(route['dev'], route['gateway']) for route in default_routes]
+
+    for i, (interface, gateway) in enumerate(gateways):
+        result = subprocess.run(['ip', '-j', 'addr', 'show', interface], capture_output=True, text=True)
+        interface_info = json.loads(result.stdout)
+        ip = None
+        for info in interface_info:
+            if 'inet' in info:
+                ip = info['inet'][0]['local']
+                break
+        gateways[i] = (interface, gateway, ip)
+
+    return gateways
 
 def modify_route(action, gateway, interface, metric=None):
     command = ['sudo', 'ip', 'route', action, 'default', 'via', gateway, 'dev',
@@ -27,14 +40,14 @@ def switch_route():
     logging.info(f"Found gateways: {gateways}")
 
     # Delete the current default routes
-    for interface, gateway in gateways:
-        logging.info(f"Deleting default route via {gateway} on {interface}")
+    for interface, gateway, ip in gateways:
+        logging.info(f"Deleting default route via {gateway} on {interface} with IP {ip}")
         modify_route('del', gateway, interface)
 
     # Add the new default routes with reversed priorities
-    logging.info(f"Adding default route via {gateways[1][1]} on {gateways[1][0]} with metric 100")
+    logging.info(f"Adding default route via {gateways[1][1]} on {gateways[1][0]} with IP {gateways[1][2]} and metric 100")
     modify_route('add', gateways[1][1], gateways[1][0], 100)
-    logging.info(f"Adding default route via {gateways[0][1]} on {gateways[0][0]} with metric 101")
+    logging.info(f"Adding default route via {gateways[0][1]} on {gateways[0][0]} with IP {gateways[0][2]} and metric 101")
     modify_route('add', gateways[0][1], gateways[0][0], 101)
 
 if __name__ == "__main__":
