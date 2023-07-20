@@ -11,7 +11,7 @@ The utility uses the `ip` command-line tool to retrieve the current default gate
 1. Clone the repository:
 
    ```shell
-   git clone https://github.com/your-username/gateway-switch-utility.git
+   git clone https://github.com/tarasglek/switch-uplink
    ```
 
 2. Change into the project directory:
@@ -23,7 +23,7 @@ The utility uses the `ip` command-line tool to retrieve the current default gate
 3. Run the script:
 
    ```shell
-   python3 gateway_switch.py
+   ./gateway_switch.py
    ```
 
    **Note:** The script requires root privileges to modify the network routes. You may be prompted to enter your password.
@@ -34,4 +34,4 @@ The utility uses the `ip` command-line tool to retrieve the current default gate
 
 This utility was generated with ChatCraft, a web-based, expert programming AI assistant. ChatCraft helps programmers learn, experiment, and be more creative with code. It provides assistance and generates code snippets based on user queries.
 
-To learn more about ChatCraft, visit the [ChatCraft GitHub repository](https://github.com/chatcraft-team/chatcraft).
+To learn more about ChatCraft, visit the [ChatCraft GitHub repository](https://github.com/tarasglek/chatcraft.org).
