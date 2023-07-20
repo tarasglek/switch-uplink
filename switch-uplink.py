@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 import subprocess
-import sys
 import json
+import logging
 
-def get_default_gateway(interface):
-    result = subprocess.run(['ip', '-j', 'route', 'show', 'dev', interface],
-                            capture_output=True, text=True)
+logging.basicConfig(level=logging.INFO)
+
+def get_default_gateways():
+    result = subprocess.run(['ip', '-j', 'route'], capture_output=True, text=True)
     routes = json.loads(result.stdout)
-    for route in routes:
-        if 'default' in route['dst']:
-            return route['gateway']
+    default_routes = [route for route in routes if 'default' in route['dst']]
+    return [(route['dev'], route['gateway']) for route in default_routes]
 
 def modify_route(action, gateway, interface, metric=None):
     command = ['sudo', 'ip', 'route', action, 'default', 'via', gateway, 'dev',
@@ -18,19 +18,24 @@ def modify_route(action, gateway, interface, metric=None):
         command.extend(['metric', str(metric)])
     subprocess.run(command)
 
-def switch_route(interface1, interface2):
-    gateway1 = get_default_gateway(interface1)
-    gateway2 = get_default_gateway(interface2)
+def switch_route():
+    gateways = get_default_gateways()
+    if len(gateways) != 2:
+        logging.error("Expected exactly two default gateways.")
+        return
+
+    logging.info(f"Found gateways: {gateways}")
 
     # Delete the current default routes
-    modify_route('del', gateway1, interface1)
-    modify_route('del', gateway2, interface2)
+    for interface, gateway in gateways:
+        logging.info(f"Deleting default route via {gateway} on {interface}")
+        modify_route('del', gateway, interface)
 
-    # Add the new default routes with appropriate metrics
-    modify_route('add', gateway1, interface1, 100)
-    modify_route('add', gateway2, interface2, 101)
+    # Add the new default routes with reversed priorities
+    logging.info(f"Adding default route via {gateways[1][1]} on {gateways[1][0]} with metric 100")
+    modify_route('add', gateways[1][1], gateways[1][0], 100)
+    logging.info(f"Adding default route via {gateways[0][1]} on {gateways[0][0]} with metric 101")
+    modify_route('add', gateways[0][1], gateways[0][0], 101)
 
-if len(sys.argv) != 3:
-    print("Usage: python3 switch_route.py <interface1> <interface2>")
-else:
-    switch_route(sys.argv[1], sys.argv[2])
+if __name__ == "__main__":
+    switch_route()
