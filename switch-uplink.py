@@ -36,7 +36,7 @@ def modify_route(action, gateway, interface, metric=None):
 def switch_route():
     gateways = get_default_gateways()
     if len(gateways) != 2:
-        logging.error("Expected exactly two default gateways.")
+        logging.error(f"Expected exactly two default gateways, but found {len(gateways)}. Gateways: {gateways}")
         return
 
     logging.info(f"Found gateways: {gateways}")
@@ -47,10 +47,13 @@ def switch_route():
         modify_route('del', gateway, interface)
 
     # Add the new default routes with reversed priorities
-    logging.info(f"Adding default route via {gateways[1][1]} on {gateways[1][0]} with IP {gateways[1][2]} and metric 100 (primary)")
-    modify_route('add', gateways[1][1], gateways[1][0], 100)
-    logging.info(f"Adding default route via {gateways[0][1]} on {gateways[0][0]} with IP {gateways[0][2]} and metric 101 (backup)")
-    modify_route('add', gateways[0][1], gateways[0][0], 101)
+    primary_interface, primary_gateway, primary_ip = gateways[1]
+    backup_interface, backup_gateway, backup_ip = gateways[0]
+
+    logging.info(f"Adding primary({primary_interface}) route via {primary_gateway} with IP {primary_ip} and metric 100")
+    modify_route('add', primary_gateway, primary_interface, 100)
+    logging.info(f"Adding backup({backup_interface}) route via {backup_gateway} with IP {backup_ip} and metric 101")
+    modify_route('add', backup_gateway, backup_interface, 101)
 
 if __name__ == "__main__":
     switch_route()
