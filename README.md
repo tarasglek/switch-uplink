@@ -1,6 +1,8 @@
 # Gateway Switch Utility
 
 The Gateway Switch Utility is a Python script that helps manage default gateways on Linux systems. It allows you to switch between two default gateways with reversed priorities.
+<img width="793" alt="image" src="https://github.com/tarasglek/switch-uplink/assets/857083/ee678df5-45e1-4d30-89c5-06767e157b5e">
+
 
 ## How It Works
 
